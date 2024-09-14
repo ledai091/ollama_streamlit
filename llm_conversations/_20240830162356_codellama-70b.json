@@ -1,0 +1,10 @@
+[
+    {
+        "content": "tell me a joke",
+        "role": "user"
+    },
+    {
+        "content": "\ud83d\ude02 What do you call a fake noodle? An impasta! \ud83c\udf5d Get it? It's a pasta joke. \ud83e\udd23 \ud83d\udc40 So there you have it, a silly yet funny pun about noodles! I hope that makes your day brighter! \u2600\ufe0f \ud83d\udc4f",
+        "role": "assistant"
+    }
+]
