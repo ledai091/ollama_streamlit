@@ -6,6 +6,8 @@ from llama_index.llms.ollama import Ollama
 import streamlit as st
 import ollama
 import re
+import os
+from llama_index.core import PromptTemplate
 try:
     OLLAMA_MODELS = ollama.list()['models']
 except Exception as e:
@@ -63,19 +65,17 @@ def select_model():
     return llm_name
 
 def generate_filename(content):
-    llm = Ollama(model="llama2")
-    response = llm.complete(f"Return me keywords about the context: {content}. Limit to 5 words, response in keywords only.")
-    
-    # Assuming the response is a string, split it into words and join the first few as a filename
-    keywords = str(response).strip().split()
-    
-    # Take the first 5 keywords and join them into a single string
-    name = ''.join(keywords[:5])
-    
-    # Remove any special characters that might not be valid in filenames
-    name = re.sub(r'[^\w]', '', name)
-    
-    return name
+    model = Ollama(model='mistral-small:22b')
+    prompt_template = PromptTemplate(
+    """
+    Summarize the context and return a title (no more than four words), no need markdown
+    Context : {content}
+    """
+    )
+    prompt = prompt_template.format(content=content)
+
+    title = model.complete(prompt)
+    return title.text.strip()
 
 def save_conversation(llm_name, conversation_key):
     save = st.sidebar.button('Save conversation')
@@ -84,7 +84,7 @@ def save_conversation(llm_name, conversation_key):
         if st.session_state[conversation_key]:
             content_summary = st.session_state[conversation_key][0]['content']
             descriptive_name = generate_filename(content_summary)
-            filename = f"{descriptive_name}_{timestamp}_{llm_name.replace(':', '-')}"
+            filename = f"{descriptive_name}"
             
             if not os.path.exists(OUTPUT_DIR):
                 os.makedirs(OUTPUT_DIR)
@@ -97,7 +97,7 @@ def save_conversation(llm_name, conversation_key):
 
 def load_conversation_history():
     history_files = [f for f in os.listdir(OUTPUT_DIR) if f.endswith('.json')]
-    history_files.sort(reverse=True)  # Sort files by name (timestamp) in descending order
+    history_files.sort(reverse=True)
     return history_files
 
 def load_selected_conversation(filename):
@@ -112,7 +112,6 @@ if __name__ == "__main__":
     if not llm_name: st.stop()
     conversation_key = f'model_{llm_name}'
     
-    # Load conversation history
     st.sidebar.title('History')
     history_files = load_conversation_history()
     selected_history = st.sidebar.selectbox("Select a previous conversation", ["Current Conversation"] + history_files)
